@@ -1,0 +1,17 @@
+[package]
+name = "wallhaven-dl"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+clap = { version = "4.5.37", features = ["derive"] } # clap
+dirs = "6.0.0" # get home dir
+glob = "0.3.2" # get firefox sessionstore.jsonlz4 path from all profiles
+image = "0.25.6" # image manipulation
+lz4 = "1.28.1" # Compression
+serde = { version = "1.0.219", features = ["derive"] } # Macros to parse things
+serde_json = "1.0.140" # Parse things
+shellexpand = "3.1.1"
+sysinfo = "0.35.0" # To check if firefox is opened or not
+tokio = { version = "1.44.2", features = ["full"] } # For async
+wallhaven-api = { path = "../wallhaven-api" } # Pretty self-explainatory
