@@ -6,6 +6,13 @@ Removes the downloaded wallpapers' firefox tabs (if there is any error, tells yo
 
 Nothing more, nothing less. 
 
+## Installation
+
+As simple as (Make sure to edit the `<repo-url>` AND to install `cargo`): 
+```sh
+git clone <repo-url> && cd wallhaven-dl && cargo install --path .
+```
+
 ## Help
 
 Here's the help message:
