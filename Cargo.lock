@@ -2275,6 +2275,8 @@ checksum = "852e951cb7832cb45cb1169900d19760cfa39b82bc0ea9c0e5a14ae88411c98b"
 [[package]]
 name = "wallhaven-api"
 version = "0.1.1-dev"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "29390e73890575b8720f2c0741a23f164ede323e222ff2fa11fdd3cb49407974"
 dependencies = [
  "futures",
  "reqwest",
