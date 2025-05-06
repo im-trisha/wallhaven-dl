@@ -1,7 +1,7 @@
 use clap::Parser;
 use error::WallpaperError;
 use image_processing::crop_and_resize;
-use std::path::PathBuf;
+use std::{path::PathBuf, sync::Arc};
 use tokio::{fs, task::JoinSet};
 use wallhaven_api::WallhavenClient;
 
@@ -46,16 +46,18 @@ async fn main() -> error::Result<()> {
 
     let mut set: JoinSet<Result<(), WallpaperError>> = JoinSet::new();
 
+    let client = Arc::new(client);
+    let outdir = Arc::new(outdir);
     for id in wallhaven_ids {
-        let client = client.clone();
-        let outdir = outdir.clone();
+        let client = Arc::clone(&client);
+        let outdir = Arc::clone(&outdir);
         let resolution = args.resolution.clone();
 
         set.spawn(async move {
             let wallpaper = client.wallpaper(&id).await;
             let wallpaper = wallpaper.map_err(|e| WallpaperError::from(&id, e))?;
 
-            let path = wallpaper.download(&client, &outdir).await;
+            let path = wallpaper.download(&*client, &*outdir).await;
             let path = path.map_err(|e| WallpaperError::from(&id, e))?;
 
             let with_new_ext = path.clone().with_extension("png");
@@ -82,7 +84,9 @@ async fn main() -> error::Result<()> {
         }
     }
 
-    firefox.save().await?;
+    if args.remove {
+        firefox.save().await?;
+    }
 
     Ok(())
 }

@@ -13,6 +13,9 @@ pub struct Args {
     /// Image output resolution. Your problem to know which ones are possible, not mine tbh
     #[arg(short, long, value_parser=parse_resolution, default_value="1920x1080")]
     pub resolution: Option<Resolutions>,
+    /// Whether you want to remove the downloaded tabs from firefox
+    #[arg(long)]
+    pub remove: bool,
 }
 
 fn parse_resolution(s: &str) -> Result<Resolutions, String> {
