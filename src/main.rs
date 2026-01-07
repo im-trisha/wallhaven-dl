@@ -1,90 +1,70 @@
 use clap::Parser;
-use error::WallpaperError;
-use image_processing::crop_and_resize;
 use std::{path::PathBuf, sync::Arc};
 use tokio::{fs, task::JoinSet};
-use wallhaven_api::WallhavenClient;
+use wallhaven_rs::WallhavenClient;
 
-pub use error::Error;
+pub use error::{Error, Result};
 mod args;
 mod error;
 mod firefox;
-mod image_processing;
+mod steps;
 use firefox::models::Firefox;
 
 const API_KEY_NAME: &str = "WALLHAVEN_API_KEY";
-const WALLHAVEN_PREFIX: &str = "https://wallhaven.cc/w/";
 
 #[tokio::main]
 async fn main() -> error::Result<()> {
+    steps::setup_logger()?;
+
     let args = args::Args::parse();
 
     let outdir = PathBuf::from(shellexpand::full(&args.outdir)?.to_string());
     fs::create_dir_all(&outdir).await?;
 
     let api_key = args.api_key.or_else(|| std::env::var(API_KEY_NAME).ok());
-    let client = WallhavenClient::new(api_key.as_deref())?;
+    let client = match api_key {
+        Some(key) => WallhavenClient::with_key(key)?,
+        None => WallhavenClient::new()?,
+    };
 
     let mut firefox = Firefox::new().await?;
+    let wallhaven_ids = firefox.wallhaven_urls();
 
-    let mut wallhaven_ids = Vec::new();
-    for profile in &mut firefox.profiles {
-        for window in &mut profile.profile.windows {
-            window.tabs.retain(|t| {
-                let mut urls: Vec<String> = t
-                    .entries
-                    .iter()
-                    .filter_map(|e| e.url.strip_prefix(WALLHAVEN_PREFIX).map(String::from))
-                    .collect();
+    let mut set: JoinSet<core::result::Result<(), (String, crate::Error)>> = JoinSet::new();
 
-                let is_empty = urls.is_empty();
-                wallhaven_ids.append(&mut urls);
-                is_empty
-            });
-        }
-    }
-
-    let mut set: JoinSet<Result<(), WallpaperError>> = JoinSet::new();
-
-    let client = Arc::new(client);
     let outdir = Arc::new(outdir);
+    log::info!(
+        "Found {} wallpapers to download. Starting...",
+        wallhaven_ids.len()
+    );
+
     for id in wallhaven_ids {
-        let client = Arc::clone(&client);
+        let client = client.clone();
         let outdir = Arc::clone(&outdir);
         let resolution = args.resolution.clone();
 
         set.spawn(async move {
-            let wallpaper = client.wallpaper(&id).await;
-            let wallpaper = wallpaper.map_err(|e| WallpaperError::from(&id, e))?;
-
-            let path = wallpaper.download(&*client, &*outdir).await;
-            let path = path.map_err(|e| WallpaperError::from(&id, e))?;
-
-            let with_new_ext = path.clone().with_extension("png");
-
-            if let Some(resolution) = resolution {
-                crop_and_resize(&path, &with_new_ext, &resolution)
-                    .map_err(|e| WallpaperError::from(&id, e))?;
+            match steps::download_wallpaper(id.clone(), &client, &outdir, resolution).await {
+                Ok(_) => Ok(()),
+                Err(e) => Err((id, e)),
             }
-
-            if path != with_new_ext {
-                fs::remove_file(path)
-                    .await
-                    .map_err(|e| WallpaperError::from(&id, e))?;
-            }
-            Ok(())
         });
     }
 
+    let mut failed_ids = Vec::new();
     while let Some(res) = set.join_next().await {
         match res {
-            Ok(Err(e)) => eprintln!("{}", e),
-            Err(err) => eprintln!("Error joining thread: {err}"),
+            Ok(Err((id, e))) => {
+                log::error!("Error for wallpaper {id}: {e}");
+                failed_ids.push(id);
+            }
+            Err(e) => log::error!("Error joining thread: {e}"),
             Ok(Ok(_)) => {}
         }
     }
 
-    if args.remove {
+    if !args.no_remove {
+        firefox.remove_ids(&failed_ids);
         firefox.save().await?;
     }
 
