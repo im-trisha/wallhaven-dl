@@ -18,8 +18,8 @@ pub fn crop_and_resize(buffer: &[u8], res: &Resolution) -> crate::Result<Vec<u8>
         _ => (orig_w, orig_w * (target_h / target_w)),
     };
 
-    let crop_x = (orig_w - crop_w) / 2;
-    let crop_y = (orig_h - crop_h) / 2;
+    let crop_x = ((orig_w as isize - crop_w as isize).abs() / 2) as u32;
+    let crop_y = ((orig_h as isize - crop_h as isize).abs() / 2) as u32;
 
     let cropped = img.crop_imm(crop_x, crop_y, crop_w, crop_h);
     let resized = cropped.resize_exact(target_w, target_h, FilterType::Lanczos3);
