@@ -75,7 +75,7 @@ impl Firefox {
                     t.entries.iter().any(|e| {
                         e.url
                             .strip_prefix(WALLHAVEN_PREFIX)
-                            .is_some_and(|u| ids.contains(&u))
+                            .is_some_and(|u| !ids.contains(&u))
                     })
                 });
             }
