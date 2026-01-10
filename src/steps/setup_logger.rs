@@ -19,7 +19,7 @@ pub fn setup_logger() -> crate::Result<()> {
                 message
             ));
         })
-        .level(log::LevelFilter::Debug)
+        .level(log::LevelFilter::Info)
         .chain(std::io::stdout())
         .chain(fern::log_file("./wallhaven-dl.logs")?)
         .apply()?;

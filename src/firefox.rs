@@ -1,6 +1,7 @@
 pub mod models;
 
 use models::{Firefox, Profile, ProfileWithPath};
+use std::collections::HashSet;
 use std::ffi::OsStr;
 use std::io::{self, ErrorKind, Read};
 use std::path::PathBuf;
@@ -68,14 +69,15 @@ impl Firefox {
     }
 
     pub fn remove_ids<S: AsRef<str>>(&mut self, ids: &[S]) {
-        let ids: Vec<&str> = ids.iter().map(|i| i.as_ref()).collect();
+        let ids: HashSet<&str> = ids.iter().map(|i| i.as_ref()).collect();
+
         for profile in &mut self.profiles {
             for window in &mut profile.profile.windows {
                 window.tabs.retain(|t| {
-                    t.entries.iter().any(|e| {
+                    !t.entries.iter().any(|e| {
                         e.url
                             .strip_prefix(WALLHAVEN_PREFIX)
-                            .is_some_and(|u| !ids.contains(&u))
+                            .is_some_and(|u| ids.contains(&u))
                     })
                 });
             }
