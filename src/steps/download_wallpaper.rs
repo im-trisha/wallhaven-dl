@@ -6,7 +6,7 @@ use tokio::{fs::File, io::AsyncWriteExt};
 use wallhaven_rs::{Resolution, WallhavenClient};
 
 pub async fn download_wallpaper(
-    id: String,
+    id: &str,
     client: &WallhavenClient,
     outdir: &PathBuf,
     resolution: Option<Resolution>,

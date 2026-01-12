@@ -58,7 +58,7 @@ impl Firefox {
         Ok(())
     }
 
-    pub fn wallhaven_urls(&self) -> Vec<String> {
+    pub fn wallhaven_urls(&self) -> HashSet<String> {
         self.profiles
             .iter()
             .flat_map(|profile| &profile.profile.windows)
@@ -68,7 +68,8 @@ impl Firefox {
             .collect()
     }
 
-    pub fn remove_ids<S: AsRef<str>>(&mut self, ids: &[S]) {
+    pub fn remove_ids<S: AsRef<str>>(&mut self, ids: &HashSet<S>) {
+        // I hope this gets compiled as a no-op for HashSet<&str>?
         let ids: HashSet<&str> = ids.iter().map(|i| i.as_ref()).collect();
 
         for profile in &mut self.profiles {

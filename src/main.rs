@@ -1,5 +1,5 @@
 use clap::Parser;
-use std::{path::PathBuf, sync::Arc};
+use std::{collections::HashSet, path::PathBuf, sync::Arc};
 use tokio::{fs, task::JoinSet};
 use wallhaven_rs::WallhavenClient;
 
@@ -28,7 +28,7 @@ async fn main() -> error::Result<()> {
     };
 
     let mut firefox = Firefox::new().await?;
-    let wallhaven_ids = firefox.wallhaven_urls();
+    let mut wallhaven_ids = firefox.wallhaven_urls();
 
     let mut set: JoinSet<core::result::Result<(), (String, crate::Error)>> = JoinSet::new();
 
@@ -38,25 +38,25 @@ async fn main() -> error::Result<()> {
         wallhaven_ids.len()
     );
 
-    for id in wallhaven_ids {
+    for id in &wallhaven_ids {
         let client = client.clone();
         let outdir = Arc::clone(&outdir);
         let resolution = args.resolution.clone();
+        let id = id.clone();
 
         set.spawn(async move {
-            match steps::download_wallpaper(id.clone(), &client, &outdir, resolution).await {
+            match steps::download_wallpaper(&id, &client, &outdir, resolution).await {
                 Ok(_) => Ok(()),
                 Err(e) => Err((id, e)),
             }
         });
     }
 
-    let mut failed_ids = Vec::new();
     while let Some(res) = set.join_next().await {
         match res {
             Ok(Err((id, e))) => {
                 log::error!("Error for wallpaper {id}: {e}");
-                failed_ids.push(id);
+                wallhaven_ids.remove(&id);
             }
             Err(e) => log::error!("Error joining thread: {e}"),
             Ok(Ok(_)) => {}
@@ -64,7 +64,7 @@ async fn main() -> error::Result<()> {
     }
 
     if !args.no_remove {
-        firefox.remove_ids(&failed_ids);
+        firefox.remove_ids(&wallhaven_ids);
         firefox.save().await?;
     }
 
