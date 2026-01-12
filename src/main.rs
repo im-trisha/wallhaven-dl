@@ -1,5 +1,5 @@
 use clap::Parser;
-use std::{collections::HashSet, path::PathBuf, sync::Arc};
+use std::{path::PathBuf, sync::Arc};
 use tokio::{fs, task::JoinSet};
 use wallhaven_rs::WallhavenClient;
 
