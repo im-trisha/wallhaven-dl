@@ -16,7 +16,7 @@ lz4 = "1.28.1"                                         # Compression
 serde = { version = "1.0.228", features = ["derive"] } # Macros to parse things
 serde_json = "1.0.149"                                 # Parse things
 shellexpand = "3.1.1"                                  # expand home directory
-sysinfo = "0.37.2"                                     # To check if firefox is opened or not
+sysinfo = "0.38.4"                                     # To check if firefox is opened or not
 thiserror = "2.0.17"                                   # error crate, must be replaced or something, errors must have context
 tokio = { version = "1.49.0", features = ["full"] }    # For async runtime
 wallhaven-rs = "0.2.3"                                 # Pretty self-explainatory
