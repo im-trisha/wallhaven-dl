@@ -104,7 +104,7 @@ impl Firefox {
 
         #[cfg(target_os = "linux")]
         #[rustfmt::skip]
-        let path: PathBuf = [home, ".mozilla", "firefox", "*default*", "sessionstore.jsonlz4"].iter().collect();
+        let path: PathBuf = [home, ".config", "mozilla", "firefox", "*default*", "sessionstore.jsonlz4"].iter().collect();
 
         #[cfg(target_os = "macos")]
         #[rustfmt::skip]
